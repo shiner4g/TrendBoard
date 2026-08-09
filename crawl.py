@@ -157,7 +157,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrendBoard</title>
 <style>
-  :root { --bg: #f4f5f7; --card-bg: #ffffff; --border: #e3e5e8; --text: #222; --text-sub: #888; --accent: #3b82f6; --badge-bg: #eef2ff; }
+  :root { --bg: #f4f5f7; --card-bg: #ffffff; --border: #e3e5e8; --text: #222; --text-sub: #888; --accent: #3b82f6; --badge-bg: #eef2ff; --post-size: 16px; }
   :root[data-theme="dark"] { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; } }
   * { box-sizing: border-box; }
@@ -165,6 +165,10 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
   header h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.5px; text-wrap: balance; }
   .updated { font-size: 15px; color: var(--text-sub); }
+  .font-controls { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; font-size: 15px; color: var(--text-sub); vertical-align: middle; }
+  .font-controls button { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 6px; padding: 2px 10px; font-size: 15px; cursor: pointer; line-height: 1.6; }
+  .font-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .font-controls span { min-width: 40px; display: inline-block; text-align: center; font-variant-numeric: tabular-nums; }
   .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 18px; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
@@ -177,11 +181,10 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   ol.post-list { list-style: none; margin: 0; padding: 6px 0; }
   ol.post-list li { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px dashed var(--border); }
   ol.post-list li:last-child { border-bottom: none; }
-  .rank { flex: 0 0 auto; font-size: 15px; color: var(--text-sub); font-weight: 700; width: 22px; font-variant-numeric: tabular-nums; }
-  .post-title { flex: 1 1 auto; font-size: 17px; color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .post-title { flex: 1 1 auto; font-size: var(--post-size); color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .post-title:hover { color: var(--accent); text-decoration: underline; }
   .post-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-  .comments { flex: 0 0 auto; font-size: 15px; color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+  .comments { flex: 0 0 auto; font-size: calc(var(--post-size) - 2px); color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
   .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 16px; text-align: center; }
   footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 14px; color: var(--text-sub); }
   footer a { color: var(--accent); }
@@ -191,6 +194,12 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <header>
   <h1>TrendBoard</h1>
   <div class="updated" id="updatedAt">불러오는 중...</div>
+  <div class="font-controls">
+    글자 크기
+    <button id="fontDec" type="button" aria-label="글자 작게">가-</button>
+    <span id="fontSizeLabel">16px</span>
+    <button id="fontInc" type="button" aria-label="글자 크게">가+</button>
+  </div>
 </header>
 <div class="grid" id="grid"></div>
 <footer>
@@ -201,9 +210,32 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   const COMMUNITY_DATA = __DATA_JSON__;
   (function () {
     const STORAGE_KEY = 'communityViewerOrder';
+    const FONT_KEY = 'communityViewerFontSize';
+    const FONT_MIN = 12;
+    const FONT_MAX = 26;
+    const FONT_DEFAULT = 16;
     const grid = document.getElementById('grid');
     const updatedEl = document.getElementById('updatedAt');
     const resetLink = document.getElementById('resetOrder');
+    const fontDecBtn = document.getElementById('fontDec');
+    const fontIncBtn = document.getElementById('fontInc');
+    const fontSizeLabel = document.getElementById('fontSizeLabel');
+
+    function getFontSize() {
+      const raw = parseInt(localStorage.getItem(FONT_KEY), 10);
+      return (!isNaN(raw) && raw >= FONT_MIN && raw <= FONT_MAX) ? raw : FONT_DEFAULT;
+    }
+    function setFontSize(px) {
+      px = Math.max(FONT_MIN, Math.min(FONT_MAX, px));
+      document.documentElement.style.setProperty('--post-size', px + 'px');
+      try { localStorage.setItem(FONT_KEY, String(px)); } catch (e) {}
+      fontSizeLabel.textContent = px + 'px';
+      return px;
+    }
+    let currentFontSize = setFontSize(getFontSize());
+    fontDecBtn.addEventListener('click', function () { currentFontSize = setFontSize(currentFontSize - 1); });
+    fontIncBtn.addEventListener('click', function () { currentFontSize = setFontSize(currentFontSize + 1); });
+
     if (typeof COMMUNITY_DATA === 'undefined' || !COMMUNITY_DATA.communities) { updatedEl.textContent = '데이터가 없습니다.'; return; }
     updatedEl.textContent = '마지막 업데이트: ' + COMMUNITY_DATA.generatedAt;
     function getSavedOrder() { try { const raw = localStorage.getItem(STORAGE_KEY); const arr = raw ? JSON.parse(raw) : null; return Array.isArray(arr) ? arr : null; } catch (e) { return null; } }
@@ -244,7 +276,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
           const list = document.createElement('ol'); list.className = 'post-list';
           community.posts.forEach(function (post, idx) {
             const li = document.createElement('li');
-            li.innerHTML = '<span class="rank">' + (idx + 1) + '</span><a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="comments">' + post.comments + '</span>';
+            li.innerHTML = '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="comments">' + post.comments + '</span>';
             list.appendChild(li);
           });
           card.appendChild(list);
