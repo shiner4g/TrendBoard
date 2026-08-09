@@ -1,304 +1,100 @@
 <title>TrendBoard</title>
 <style>
-  :root {
-    --bg: #f4f5f7;
-    --card-bg: #ffffff;
-    --border: #e3e5e8;
-    --text: #222;
-    --text-sub: #888;
-    --accent: #3b82f6;
-    --badge-bg: #eef2ff;
-  }
-  :root[data-theme="dark"] {
-    --bg: #16181d;
-    --card-bg: #1f2228;
-    --border: #2c2f36;
-    --text: #e6e6e6;
-    --text-sub: #8a8f98;
-    --accent: #6ea8fe;
-    --badge-bg: #1d2740;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #16181d;
-      --card-bg: #1f2228;
-      --border: #2c2f36;
-      --text: #e6e6e6;
-      --text-sub: #8a8f98;
-      --accent: #6ea8fe;
-      --badge-bg: #1d2740;
-    }
-  }
+  :root { --bg: #f4f5f7; --card-bg: #ffffff; --border: #e3e5e8; --text: #222; --text-sub: #888; --accent: #3b82f6; --badge-bg: #eef2ff; }
+  :root[data-theme="dark"] { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; } }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 24px 16px 60px;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
-  }
-  header {
-    max-width: 1620px;
-    margin: 0 auto 24px;
-    text-align: center;
-  }
-  header h1 {
-    margin: 0 0 6px;
-    font-size: 28px;
-    letter-spacing: -0.5px;
-    text-wrap: balance;
-  }
-  .updated {
-    font-size: 12px;
-    color: var(--text-sub);
-  }
-  .grid {
-    max-width: 1620px;
-    margin: 24px auto 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
-    gap: 18px;
-  }
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: opacity 0.15s, border-color 0.15s;
-  }
+  body { margin: 0; padding: 24px 16px 60px; background: var(--bg); color: var(--text); font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
+  header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
+  header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.5px; text-wrap: balance; }
+  .updated { font-size: 12px; color: var(--text-sub); }
+  .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 18px; }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
   .card.drag-over { border-color: var(--accent); }
-  .card-header {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: color-mix(in srgb, var(--card-bg) 92%, var(--text));
-    cursor: grab;
-  }
+  .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); cursor: grab; }
   .card-header:active { cursor: grabbing; }
-  .drag-handle {
-    flex: 0 0 auto;
-    color: var(--text-sub);
-    font-size: 14px;
-    letter-spacing: -1px;
-    user-select: none;
-  }
-  .card-header .title {
-    font-weight: 700;
-    font-size: 15px;
-  }
-  .card-header .board {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--text-sub);
-  }
-  ol.post-list {
-    list-style: none;
-    margin: 0;
-    padding: 6px 0;
-  }
-  ol.post-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 9px 16px;
-    border-bottom: 1px dashed var(--border);
-  }
+  .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 14px; letter-spacing: -1px; user-select: none; }
+  .card-header .title { font-weight: 700; font-size: 15px; }
+  .card-header .board { margin-left: auto; font-size: 12px; color: var(--text-sub); }
+  ol.post-list { list-style: none; margin: 0; padding: 6px 0; }
+  ol.post-list li { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px dashed var(--border); }
   ol.post-list li:last-child { border-bottom: none; }
-  .rank {
-    flex: 0 0 auto;
-    font-size: 12px;
-    color: var(--text-sub);
-    font-weight: 700;
-    width: 16px;
-    font-variant-numeric: tabular-nums;
-  }
-  .post-title {
-    flex: 1 1 auto;
-    font-size: 14px;
-    color: var(--text);
-    text-decoration: none;
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .rank { flex: 0 0 auto; font-size: 12px; color: var(--text-sub); font-weight: 700; width: 16px; font-variant-numeric: tabular-nums; }
+  .post-title { flex: 1 1 auto; font-size: 14px; color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .post-title:hover { color: var(--accent); text-decoration: underline; }
   .post-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-  .comments {
-    flex: 0 0 auto;
-    font-size: 12px;
-    color: var(--accent);
-    background: var(--badge-bg);
-    border-radius: 10px;
-    padding: 1px 7px;
-    font-weight: 600;
-    min-width: 20px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  .empty-note {
-    padding: 24px 16px;
-    color: var(--text-sub);
-    font-size: 13px;
-    text-align: center;
-  }
-  footer {
-    max-width: 1620px;
-    margin: 36px auto 0;
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-sub);
-  }
+  .comments { flex: 0 0 auto; font-size: 12px; color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+  .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 13px; text-align: center; }
+  footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 12px; color: var(--text-sub); }
   footer a { color: var(--accent); }
 </style>
-
 <header>
   <h1>TrendBoard</h1>
   <div class="updated" id="updatedAt">불러오는 중...</div>
 </header>
-
 <div class="grid" id="grid"></div>
-
 <footer>
   카드 제목 부분을 드래그하면 순서를 바꿀 수 있어요 (이 브라우저에 저장됩니다). <a href="#" id="resetOrder">순서 초기화</a><br>
-  클리앙 · MLB파크 · 뽐뿌 · 오늘의유머 · 82cook의 인기글(댓글 많은 순 10개)을 매시간 자동으로 갱신합니다.
+  클리앙 · MLB파크 · 뽐뿌 · 오늘의유머 · 82cook의 인기글(댓글 많은 순 10개)을 GitHub Actions가 10분마다 자동으로 갱신합니다.
 </footer>
-
 <script>
-  // 자동 생성 데이터 — 매시간 예약된 크롤러가 이 부분을 갱신하며 페이지 전체를 다시 게시합니다.
-  const COMMUNITY_DATA = {"generatedAt":"2026-08-09 16:13:43","communities":[{"name":"클리앙","board":"모두의공원","posts":[{"title":"뉴님들에게 진짜 궁금한 거 하나는요","url":"https://www.clien.net/service/board/park/19244099?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":44},{"title":"역설적으로 부동산은 올라야 합니다.(정보글)","url":"https://www.clien.net/service/board/park/19244114?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":27},{"title":"이재명의 민주당이라고 생각하는 분들께서는","url":"https://www.clien.net/service/board/park/19244116?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":26},{"title":"이재명의 민주당은 다른 민주당인가?","url":"https://www.clien.net/service/board/park/19244112?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":21},{"title":"김민석 막아낸들 뭐 할까요","url":"https://www.clien.net/service/board/park/19244109?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":16},{"title":"대통령은 세세한 디테일 신경 끄면 좋겠습니다","url":"https://www.clien.net/service/board/park/19244098?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":15},{"title":"뉴님들 그러길래 왜 그러셨습니까요 ㅋㅋ","url":"https://www.clien.net/service/board/park/19244134?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":14},{"title":"\u0027갤럭시 Z8\u0027 글로벌 사전 판매 30%↑…구글·애플 출격 전 청신호","url":"https://www.clien.net/service/board/park/19244103?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":10},{"title":"나는 당원들의 민주당 계속 하렵니다.","url":"https://www.clien.net/service/board/park/19244122?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":10},{"title":"김민석 당대표시 이전 민주당이 사라지는 이유","url":"https://www.clien.net/service/board/park/19244091?od=T31\u0026po=0\u0026category=0\u0026groupCd=","comments":9}],"error":null},{"name":"MLB파크","board":"BULLPEN","posts":[{"title":"40대라도 돈많고 잘생기면 20대 그냥 꼬심","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859414\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":13},{"title":"저는 이민갈 능력 있으면 호주 가지 유럽은 안갈듯 합니다.","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859400\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":12},{"title":"성형은 무조건 강남이 답인가여?","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859428\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":9},{"title":"주식할 때 차트만 보는 사람 한심하지 않나요??","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859404\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":7},{"title":"커피드시는분 계세요? 하루에 몇잔 드세요?","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859446\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":7},{"title":"크리스토퍼 놀란감독이 추천하는 44편의 영화","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859422\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":5},{"title":"학창시절 친구중에 순자산 100억 넘긴 친구 있나요?","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859408\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":4},{"title":"리센느 원이 유튜브 근황","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859438\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":4},{"title":"영써니 영포티들 20대녀들한테 먹히는 방법 알려드림","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859396\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":4},{"title":"어떤 스터디모임은","url":"https://mlbpark.donga.com/mp/b.php?id=202608090117859402\u0026p=1\u0026b=bullpen\u0026m=view\u0026select=\u0026query=\u0026subselect=\u0026subquery=\u0026user=\u0026site=donga.com","comments":4}],"error":null},{"name":"뽐뿌","board":"자유게시판","posts":[{"title":"여교사들 \"남교사 필요하다.\"","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073138","comments":30},{"title":"경북 포항 비 쏟아집니다.","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073142","comments":18},{"title":"31돈데 이정도면 괜찮다고 느끼다니","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073134","comments":17},{"title":"지방 이전이 답이라구요?","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073125","comments":15},{"title":"음주측정 거부하면, 무조건 면허 취소","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073139","comments":10},{"title":"전 10년 남았네요. ㄷㄷ","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073148","comments":9},{"title":"경남 양산 비 쏟아집니다.","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073132","comments":9},{"title":"김희철 입장문 인스타 업로드 ㄷㄷ ㄷㄷ ㄷㄷ ㄷㄷ.jpg","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073151","comments":8},{"title":"염색만 안해주는 이발소도 있네요","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073141","comments":7},{"title":"민주당대표 선거 재미있는 상상","url":"https://www.ppomppu.co.kr/zboard/view.php?id=freeboard\u0026page=1\u0026divpage=1882\u0026no=10073136","comments":7}],"error":null},{"name":"오늘의유머","board":"베스트","posts":[{"title":"라이터 gif","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796743\u0026s_no=1796743\u0026page=1","comments":52},{"title":"무슨 국힘이 정청래를 밀어 말도 안되는 소리를 하고있네 공작을 하려면 좀","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796770\u0026s_no=1796770\u0026page=1","comments":17},{"title":"ㅎㅂ?)그냥 호호 몆개","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796747\u0026s_no=1796747\u0026page=1","comments":16},{"title":"탑승거부할게요","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796761\u0026s_no=1796761\u0026page=1","comments":14},{"title":"글쎄 별로 위기감이 안 느껴진다.","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796766\u0026s_no=1796766\u0026page=1","comments":12},{"title":"한중일 중 한국만 밥을 들고 안 먹는 이유","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796753\u0026s_no=1796753\u0026page=1","comments":12},{"title":"당신이 300년전 왕으로 태어났다면 받았을 밥상","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796768\u0026s_no=1796768\u0026page=1","comments":12},{"title":"위기) 외국인들이 맛들리고 있는 한국 음식.jpg","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796762\u0026s_no=1796762\u0026page=1","comments":11},{"title":"김민석을 지지할 이유를 아직 찾지 못함","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796748\u0026s_no=1796748\u0026page=1","comments":11},{"title":"PD수첩 인터뷰하던 북한 포로들이 처음으로 웃은 순간","url":"https://www.todayhumor.co.kr/board/view.php?table=humorbest\u0026no=1796751\u0026s_no=1796751\u0026page=1","comments":11}],"error":null},{"name":"82cook","board":"자유게시판","posts":[{"title":"전업 주부분들 평일에","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225265\u0026page=1","comments":10},{"title":"발톱 다쳤는데 수영 강습 포기할까요?","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225264\u0026page=1","comments":7},{"title":"부부공동명의 1가구2주택?","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225270\u0026page=1","comments":6},{"title":"정부가 월세화 하려는 이유는 세금 걷으려는 거죠","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225277\u0026page=1","comments":5},{"title":"한국에서 외국인끼리 만나면 ㅋㅋㅋ","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225260\u0026page=1","comments":5},{"title":"저는 1가구 4주택인듯","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225281\u0026page=1","comments":5},{"title":"S\u0026P500 사상최고치 찍었을 때도 제 평단이 더 높아요..","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225275\u0026page=1","comments":3},{"title":"9급에서 7급까지 몇년 안 걸려요 4,5년","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225262\u0026page=1","comments":3},{"title":"오디세이 옥의 티","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225282\u0026page=1","comments":3},{"title":"냉동 마늘로 김장 담궈도 될까요?","url":"https://www.82cook.com/entiz/read.php?bn=15\u0026num=4225269\u0026page=1","comments":3}],"error":null}]};
-
+  const COMMUNITY_DATA = {"generatedAt": "2026-08-09 21:56:55 KST", "communities": [{"name": "클리앙", "board": "모두의공원", "posts": [{"title": "이재명은 부동산에 대해서 문재인 정부 실패 원인을 꼭 챙겼으면 합니다.", "url": "https://www.clien.net/service/board/park/19244260?od=T31&po=0&category=0&groupCd=", "comments": 33}, {"title": "제가 이상한건지, 식당 이름이 거슬리네요.", "url": "https://www.clien.net/service/board/park/19244262?od=T31&po=0&category=0&groupCd=", "comments": 31}, {"title": "여론조사 꽃과 실제 전당 투표율 비교", "url": "https://www.clien.net/service/board/park/19244259?od=T31&po=0&category=0&groupCd=", "comments": 31}, {"title": "서울아파트는 원화가격 상승률로나 달러로나 정말 많이 올랐어요", "url": "https://www.clien.net/service/board/park/19244253?od=T31&po=0&category=0&groupCd=", "comments": 24}, {"title": "아직도 여론조사 꽃을 믿는다고요?", "url": "https://www.clien.net/service/board/park/19244281?od=T31&po=0&category=0&groupCd=", "comments": 23}, {"title": "아이폰 13프로 사용중인데 언제까지 써야할지 모르겠네요", "url": "https://www.clien.net/service/board/park/19244284?od=T31&po=0&category=0&groupCd=", "comments": 20}, {"title": "안규백 '마오쩌둥의 좌우명이 내 좌우명'", "url": "https://www.clien.net/service/board/park/19244248?od=T31&po=0&category=0&groupCd=", "comments": 19}, {"title": "박시영은 너무 이상하네요.", "url": "https://www.clien.net/service/board/park/19244272?od=T31&po=0&category=0&groupCd=", "comments": 18}, {"title": "드디어 저희 동네 차례가 오는 군요", "url": "https://www.clien.net/service/board/park/19244254?od=T31&po=0&category=0&groupCd=", "comments": 15}, {"title": "김민석 일정 발걸음 ㅡ8월 10일", "url": "https://www.clien.net/service/board/park/19244252?od=T31&po=0&category=0&groupCd=", "comments": 15}], "error": null}, {"name": "MLB파크", "board": "BULLPEN", "posts": [{"title": "내기준 막대 아이스크림 4대장", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862034&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 21}, {"title": "현대에는 쿠데타 일어나기 엄청 어렵죠?", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862028&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 7}, {"title": "리센느 리브, 미나미는 조금만 살 붙으면", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862024&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 5}, {"title": "추운게 더운것보다 낫지않나요?", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862048&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 4}, {"title": "현재 LCK POM 1~3위 ㅋㅋㅋ.jpg", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862032&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 4}, {"title": "이강인 기점", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862076&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 3}, {"title": "아일릿 It's me 후크송인데 안 질리네요", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862046&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 3}, {"title": "여러분이 욕하는 애플 조만간 전고점 뚫을겁니다.", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862022&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 3}, {"title": "자취남, 겨울과 여름 가스비 차이.ㅎㄷㄷ", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862052&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 2}, {"title": "(지피티) 자취방 셀카", "url": "https://mlbpark.donga.com/mp/b.php?id=202608090117862044&p=1&b=bullpen&m=view&select=&query=&subselect=&subquery=&user=&site=donga.com", "comments": 2}], "error": null}, {"name": "뽐뿌", "board": "자유게시판", "posts": [{"title": "전기 고수님들 답변좀 부탁드려요(콘센트관련)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073585", "comments": 11}, {"title": "한때 집집마다 있었다는 쟁반.jpg", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073582", "comments": 11}, {"title": "상받았어요 ㅋㅋ", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073592", "comments": 9}, {"title": "택시기사 : 하 거길 왜가지 맛없는데 ㄷㄷ.jpg", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073578", "comments": 9}, {"title": "환율 언제가 환전 타이밍??", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073576", "comments": 9}, {"title": "프미나 vs 리센느", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073596", "comments": 7}, {"title": "미운우리새끼 ㅡ졸라 어의 없는 덕자찜 ㅡ나우", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073591", "comments": 7}, {"title": "리센느 1년전 과 후", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073589", "comments": 7}, {"title": "영진아~~ 삼프로TV 64만여건 개인정보유출!!", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073580", "comments": 6}, {"title": "갑자기 반명으로 몰렸다는 인천의 민주당 권리당원 인터뷰", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=freeboard&page=1&divpage=1882&no=10073583", "comments": 4}], "error": null}, {"name": "오늘의유머", "board": "베스트", "posts": [{"title": "라이터 gif", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796743&s_no=1796743&page=1", "comments": 52}, {"title": "무슨 국힘이 정청래를 밀어 말도 안되는 소리를 하고있네 공작을 하려면 좀", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796770&s_no=1796770&page=1", "comments": 17}, {"title": "ㅎㅂ?)그냥 호호 몆개", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796747&s_no=1796747&page=1", "comments": 16}, {"title": "탑승거부할게요", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796761&s_no=1796761&page=1", "comments": 14}, {"title": "글쎄 별로 위기감이 안 느껴진다.", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796766&s_no=1796766&page=1", "comments": 12}, {"title": "한중일 중 한국만 밥을 들고 안 먹는 이유", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796753&s_no=1796753&page=1", "comments": 12}, {"title": "당신이 300년전 왕으로 태어났다면 받았을 밥상", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796768&s_no=1796768&page=1", "comments": 12}, {"title": "위기) 외국인들이 맛들리고 있는 한국 음식.jpg", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796762&s_no=1796762&page=1", "comments": 11}, {"title": "김민석을 지지할 이유를 아직 찾지 못함", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796748&s_no=1796748&page=1", "comments": 11}, {"title": "PD수첩 인터뷰하던 북한 포로들이 처음으로 웃은 순간", "url": "https://www.todayhumor.co.kr/board/view.php?table=humorbest&no=1796751&s_no=1796751&page=1", "comments": 11}], "error": null, "stale": true}, {"name": "82cook", "board": "자유게시판", "posts": [{"title": "50대도 발레배우면 몸매 예뻐지나요", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225390&page=1", "comments": 10}, {"title": "최민희 의원 페북글", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225388&page=1", "comments": 9}, {"title": "정청래 후보 페북", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225403&page=1", "comments": 8}, {"title": "인스타)국민들 약 올리는 이재명 ㅠㅠ", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225407&page=1", "comments": 7}, {"title": "아는집 자식 키우는 방법", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225400&page=1", "comments": 7}, {"title": "재테크하려면 맞벌이가 좋은 듯", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225398&page=1", "comments": 7}, {"title": "건고사리를 불리려고 하는데 냉장고에서 불려도 될까요??", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225384&page=1", "comments": 7}, {"title": "안정형 남편 최고네요.", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225386&page=1", "comments": 5}, {"title": "강원도 휴양림 왔는데 추워요", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225401&page=1", "comments": 4}, {"title": "헬스장 사우나에서 자꾸 체중을 물어들 보세요", "url": "https://www.82cook.com/entiz/read.php?bn=15&num=4225397&page=1", "comments": 4}], "error": null}]};
   (function () {
     const STORAGE_KEY = 'communityViewerOrder';
     const grid = document.getElementById('grid');
     const updatedEl = document.getElementById('updatedAt');
     const resetLink = document.getElementById('resetOrder');
-
-    if (typeof COMMUNITY_DATA === 'undefined' || !COMMUNITY_DATA.communities) {
-      updatedEl.textContent = '데이터가 없습니다.';
-      return;
-    }
-
-    updatedEl.textContent = '마지막 업데이트: ' + COMMUNITY_DATA.generatedAt + ' (매시간 자동 갱신)';
-
-    function getSavedOrder() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const arr = raw ? JSON.parse(raw) : null;
-        return Array.isArray(arr) ? arr : null;
-      } catch (e) {
-        return null;
-      }
-    }
-    function saveOrder(names) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(names)); } catch (e) {}
-    }
+    if (typeof COMMUNITY_DATA === 'undefined' || !COMMUNITY_DATA.communities) { updatedEl.textContent = '데이터가 없습니다.'; return; }
+    updatedEl.textContent = '마지막 업데이트: ' + COMMUNITY_DATA.generatedAt;
+    function getSavedOrder() { try { const raw = localStorage.getItem(STORAGE_KEY); const arr = raw ? JSON.parse(raw) : null; return Array.isArray(arr) ? arr : null; } catch (e) { return null; } }
+    function saveOrder(names) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(names)); } catch (e) {} }
     function applyOrder(communities, order) {
       if (!order) return communities.slice();
-      const byName = {};
-      communities.forEach(function (c) { byName[c.name] = c; });
+      const byName = {}; communities.forEach(function (c) { byName[c.name] = c; });
       const ordered = [];
-      order.forEach(function (name) {
-        if (byName[name]) { ordered.push(byName[name]); delete byName[name]; }
-      });
+      order.forEach(function (name) { if (byName[name]) { ordered.push(byName[name]); delete byName[name]; } });
       communities.forEach(function (c) { if (byName[c.name]) ordered.push(c); });
       return ordered;
     }
-
     let currentOrder = applyOrder(COMMUNITY_DATA.communities, getSavedOrder());
     let dragSrcIndex = null;
-
-    resetLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      localStorage.removeItem(STORAGE_KEY);
-      currentOrder = COMMUNITY_DATA.communities.slice();
-      render();
-    });
-
+    resetLink.addEventListener('click', function (e) { e.preventDefault(); localStorage.removeItem(STORAGE_KEY); currentOrder = COMMUNITY_DATA.communities.slice(); render(); });
     function render() {
       grid.innerHTML = '';
       currentOrder.forEach(function (community, index) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.draggable = true;
-
-        card.addEventListener('dragstart', function (e) {
-          dragSrcIndex = index;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', String(index));
-        });
-        card.addEventListener('dragend', function () {
-          card.classList.remove('dragging');
-        });
-        card.addEventListener('dragover', function (e) {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          card.classList.add('drag-over');
-        });
-        card.addEventListener('dragleave', function () {
-          card.classList.remove('drag-over');
-        });
+        const card = document.createElement('div'); card.className = 'card'; card.draggable = true;
+        card.addEventListener('dragstart', function (e) { dragSrcIndex = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); });
+        card.addEventListener('dragend', function () { card.classList.remove('dragging'); });
+        card.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('drag-over'); });
+        card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
         card.addEventListener('drop', function (e) {
-          e.preventDefault();
-          card.classList.remove('drag-over');
+          e.preventDefault(); card.classList.remove('drag-over');
           if (dragSrcIndex === null || dragSrcIndex === index) return;
-          const reordered = currentOrder.slice();
-          const moved = reordered.splice(dragSrcIndex, 1)[0];
-          reordered.splice(index, 0, moved);
-          currentOrder = reordered;
-          saveOrder(currentOrder.map(function (c) { return c.name; }));
-          render();
+          const reordered = currentOrder.slice(); const moved = reordered.splice(dragSrcIndex, 1)[0]; reordered.splice(index, 0, moved);
+          currentOrder = reordered; saveOrder(currentOrder.map(function (c) { return c.name; })); render();
         });
-
-        const header = document.createElement('div');
-        header.className = 'card-header';
-        header.innerHTML =
-          '<span class="drag-handle" aria-hidden="true">⠿</span>' +
-          '<span class="title">' + escapeHtml(community.name) + '</span>' +
-          '<span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span>';
+        const header = document.createElement('div'); header.className = 'card-header';
+        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span>';
         card.appendChild(header);
-
         if (!community.posts || community.posts.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'empty-note';
-          empty.textContent = community.error
-            ? '불러오지 못했습니다 (' + community.error + ')'
-            : '표시할 게시글이 없습니다.';
+          const empty = document.createElement('div'); empty.className = 'empty-note';
+          empty.textContent = community.error ? ('불러오지 못했습니다 (' + community.error + ')') : '표시할 게시글이 없습니다.';
           card.appendChild(empty);
         } else {
-          const list = document.createElement('ol');
-          list.className = 'post-list';
+          const list = document.createElement('ol'); list.className = 'post-list';
           community.posts.forEach(function (post, idx) {
             const li = document.createElement('li');
-            li.innerHTML =
-              '<span class="rank">' + (idx + 1) + '</span>' +
-              '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a>' +
-              '<span class="comments">' + post.comments + '</span>';
+            li.innerHTML = '<span class="rank">' + (idx + 1) + '</span><a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="comments">' + post.comments + '</span>';
             list.appendChild(li);
           });
           card.appendChild(list);
         }
-
         grid.appendChild(card);
       });
     }
-
     render();
-
-    function escapeHtml(s) {
-      return String(s == null ? '' : s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-    function escapeAttr(s) {
-      return escapeHtml(s).replace(/"/g, '&quot;');
-    }
+    function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
   })();
 </script>
