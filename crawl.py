@@ -150,7 +150,12 @@ COMMUNITIES = [
     {"name": "82cook", "board": "자유게시판", "url": "https://www.82cook.com/entiz/enti.php?bn=15", "encoding": "utf-8", "parse": parse_82cook},
 ]
 
-PAGE_TEMPLATE = """<title>TrendBoard</title>
+PAGE_TEMPLATE = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrendBoard</title>
 <style>
   :root { --bg: #f4f5f7; --card-bg: #ffffff; --border: #e3e5e8; --text: #222; --text-sub: #888; --accent: #3b82f6; --badge-bg: #eef2ff; }
   :root[data-theme="dark"] { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; }
@@ -160,7 +165,7 @@ PAGE_TEMPLATE = """<title>TrendBoard</title>
   header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
   header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.5px; text-wrap: balance; }
   .updated { font-size: 12px; color: var(--text-sub); }
-  .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 18px; }
+  .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 18px; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
   .card.drag-over { border-color: var(--accent); }
@@ -181,6 +186,8 @@ PAGE_TEMPLATE = """<title>TrendBoard</title>
   footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 12px; color: var(--text-sub); }
   footer a { color: var(--accent); }
 </style>
+</head>
+<body>
 <header>
   <h1>TrendBoard</h1>
   <div class="updated" id="updatedAt">불러오는 중...</div>
@@ -250,6 +257,8 @@ PAGE_TEMPLATE = """<title>TrendBoard</title>
     function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
   })();
 </script>
+</body>
+</html>
 """
 
 
