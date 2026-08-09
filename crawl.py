@@ -163,27 +163,27 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   * { box-sizing: border-box; }
   body { margin: 0; padding: 24px 16px 60px; background: var(--bg); color: var(--text); font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
   header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
-  header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.5px; text-wrap: balance; }
-  .updated { font-size: 12px; color: var(--text-sub); }
+  header h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.5px; text-wrap: balance; }
+  .updated { font-size: 15px; color: var(--text-sub); }
   .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 18px; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
   .card.drag-over { border-color: var(--accent); }
   .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); cursor: grab; }
   .card-header:active { cursor: grabbing; }
-  .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 14px; letter-spacing: -1px; user-select: none; }
-  .card-header .title { font-weight: 700; font-size: 15px; }
-  .card-header .board { margin-left: auto; font-size: 12px; color: var(--text-sub); }
+  .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; }
+  .card-header .title { font-weight: 700; font-size: 18px; }
+  .card-header .board { margin-left: auto; font-size: 15px; color: var(--text-sub); }
   ol.post-list { list-style: none; margin: 0; padding: 6px 0; }
   ol.post-list li { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px dashed var(--border); }
   ol.post-list li:last-child { border-bottom: none; }
-  .rank { flex: 0 0 auto; font-size: 12px; color: var(--text-sub); font-weight: 700; width: 16px; font-variant-numeric: tabular-nums; }
-  .post-title { flex: 1 1 auto; font-size: 14px; color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank { flex: 0 0 auto; font-size: 15px; color: var(--text-sub); font-weight: 700; width: 22px; font-variant-numeric: tabular-nums; }
+  .post-title { flex: 1 1 auto; font-size: 17px; color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .post-title:hover { color: var(--accent); text-decoration: underline; }
   .post-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-  .comments { flex: 0 0 auto; font-size: 12px; color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
-  .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 13px; text-align: center; }
-  footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 12px; color: var(--text-sub); }
+  .comments { flex: 0 0 auto; font-size: 15px; color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+  .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 16px; text-align: center; }
+  footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 14px; color: var(--text-sub); }
   footer a { color: var(--accent); }
 </style>
 </head>
