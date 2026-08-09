@@ -165,10 +165,6 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
   header h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.5px; text-wrap: balance; }
   .updated { font-size: 15px; color: var(--text-sub); }
-  .font-controls { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; font-size: 15px; color: var(--text-sub); vertical-align: middle; }
-  .font-controls button { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 6px; padding: 2px 10px; font-size: 15px; cursor: pointer; line-height: 1.6; }
-  .font-controls button:hover { border-color: var(--accent); color: var(--accent); }
-  .font-controls span { min-width: 40px; display: inline-block; text-align: center; font-variant-numeric: tabular-nums; }
   .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 18px; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
@@ -186,25 +182,30 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .post-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   .comments { flex: 0 0 auto; font-size: calc(var(--post-size) - 2px); color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
   .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 16px; text-align: center; }
-  footer { max-width: 1620px; margin: 36px auto 0; text-align: center; font-size: 14px; color: var(--text-sub); }
-  footer a { color: var(--accent); }
+  footer { max-width: 1620px; margin: 36px auto 0; text-align: center; }
+  .controls { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .controls button { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 6px; padding: 5px 14px; font-size: 14px; cursor: pointer; }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .font-controls { display: inline-flex; align-items: center; gap: 6px; }
+  .font-controls button { padding: 5px 12px; line-height: 1.4; }
+  #fontSizeLabel { min-width: 44px; display: inline-block; text-align: center; font-size: 14px; color: var(--text-sub); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
 <header>
   <h1>TrendBoard</h1>
   <div class="updated" id="updatedAt">불러오는 중...</div>
-  <div class="font-controls">
-    글자 크기
-    <button id="fontDec" type="button" aria-label="글자 작게">가-</button>
-    <span id="fontSizeLabel">16px</span>
-    <button id="fontInc" type="button" aria-label="글자 크게">가+</button>
-  </div>
 </header>
 <div class="grid" id="grid"></div>
 <footer>
-  카드 제목 부분을 드래그하면 순서를 바꿀 수 있어요 (이 브라우저에 저장됩니다). <a href="#" id="resetOrder">순서 초기화</a><br>
-  클리앙 · MLB파크 · 뽐뿌 · 오늘의유머 · 82cook의 인기글(댓글 많은 순 10개)을 GitHub Actions가 10분마다 자동으로 갱신합니다.
+  <div class="controls">
+    <button id="resetOrder" type="button">순서 초기화</button>
+    <span class="font-controls">
+      <span id="fontSizeLabel">16px</span>
+      <button id="fontDec" type="button" aria-label="글자 작게">가-</button>
+      <button id="fontInc" type="button" aria-label="글자 크게">가+</button>
+    </span>
+  </div>
 </footer>
 <script>
   const COMMUNITY_DATA = __DATA_JSON__;
