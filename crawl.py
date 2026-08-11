@@ -199,18 +199,28 @@ def parse_natepann(h):
 
 def parse_bobaedream(h):
     posts = []
-    parts = h.split('<a class="bsubject"')
-    for p in parts[1:]:
-        m = re.match(r'^[^>]*href="([^"]+)"[^>]*title="([^"]*)"[^>]*>([^<]*)</a>', p)
+    # split on bare "<tr" so each chunk starts with that row's own opening tag,
+    # letting us check its class (to skip the pinned "베스트글" widget rows,
+    # which reuse the same <a class="bsubject"> markup but sit in <tr class="best">)
+    rows = h.split("<tr")
+    for row in rows[1:]:
+        tag_end = row.find(">")
+        open_tag = row[:tag_end] if tag_end != -1 else row
+        if 'class="best"' in open_tag:
+            continue
+        m = re.search(r'<a class="bsubject"[^>]*href="([^"]+)"[^>]*>([^<]*)</a>', row)
         if not m:
             continue
         views = 0
-        mv = re.search(r'<td class="count"[^>]*>\s*([\d,]+)\s*</td>', p)
+        mv = re.search(r'<td class="count"[^>]*>\s*([\d,]+)\s*</td>', row)
         if mv:
             views = int(mv.group(1).replace(",", ""))
         posts.append(
             {
-                "title": decode_entities((m.group(2) or m.group(3)).strip()),
+                # use the anchor's visible text, not its `title` attribute - some
+                # bsubject anchors carry an unrelated accessibility hint there
+                # (literally the text "새 창", meaning "opens in new window")
+                "title": decode_entities(m.group(2).strip()),
                 "url": "https://www.bobaedream.co.kr" + decode_entities(m.group(1)),
                 "comments": 0,
                 "views": views,
@@ -221,15 +231,21 @@ def parse_bobaedream(h):
 
 def parse_ruliweb(h):
     posts = []
-    parts = h.split('<td class="subject">')
-    for p in parts[1:]:
-        m = re.search(r'<a class="subject_link deco" href="([^"]+)"[^>]*>([\s\S]*?)</a>', p)
+    # split on "<tr class=\"table_body" so each chunk starts right after that,
+    # letting us skip pinned notice rows (class="table_body notice inside")
+    rows = h.split('<tr class="table_body')
+    for row in rows[1:]:
+        tag_end = row.find(">")
+        open_tag = row[:tag_end] if tag_end != -1 else row
+        if "notice" in open_tag:
+            continue
+        m = re.search(r'<a class="subject_link deco" href="([^"]+)"[^>]*>([\s\S]*?)</a>', row)
         if not m:
             continue
         if "/community/board/300143/" not in m.group(1):
             continue
         views = 0
-        mv = re.search(r'<td class="hit">\s*([\d,]+)\s*</td>', p)
+        mv = re.search(r'<td class="hit">\s*([\d,]+)\s*</td>', row)
         if mv:
             views = int(mv.group(1).replace(",", ""))
         posts.append(
@@ -243,41 +259,24 @@ def parse_ruliweb(h):
     return posts
 
 
-def parse_instiz(h):
-    posts = []
-    parts = h.split('listsubject"><a href="')
-    for p in parts[1:]:
-        m = re.match(r'^([^"]+)"[^>]*>([\s\S]*?)</a></td>', p)
-        if not m:
-            continue
-        views = 0
-        mv = re.search(r'<td class="listno" width="45">\s*([\d,]+)\s*</td>', p)
-        if mv:
-            views = int(mv.group(1).replace(",", ""))
-        # the visible comment-count number sits inside a nested <span class="cmt3">
-        # within the same title anchor - strip that whole span (not just its tags)
-        # before stripping the rest, or its digits leak onto the end of the title.
-        title_html = re.sub(r'<span class="cmt3"[^>]*>.*?</span>', "", m.group(2))
-        posts.append(
-            {
-                "title": strip_tags(title_html),
-                "url": decode_entities(m.group(1)),
-                "comments": 0,
-                "views": views,
-            }
-        )
-    return posts
-
-
 def parse_dcbest(h):
     posts = []
-    parts = h.split('<td class="gall_tit ub-word">')
-    for p in parts[1:]:
-        m = re.match(r'^\s*<a href="([^"]+)"[^>]*>([\s\S]*?)</a>', p)
+    # split on "<tr class=\"ub-content" so each chunk starts right after that,
+    # letting us skip the pinned notice/survey row (data-type="icon_notice",
+    # missing the "us-post" class real posts have)
+    rows = h.split('<tr class="ub-content')
+    for row in rows[1:]:
+        tag_end = row.find(">")
+        open_tag = row[:tag_end] if tag_end != -1 else row
+        if "us-post" not in open_tag:
+            continue
+        # note: raw source sometimes has "<a  href=" with a doubled space - \s+
+        # (not a literal single space) is required here
+        m = re.search(r'<td class="gall_tit ub-word">\s*<a\s+href="([^"]+)"[^>]*>([\s\S]*?)</a>', row)
         if not m:
             continue
         views = 0
-        mv = re.search(r'<td class="gall_count">\s*([\d,]+)\s*</td>', p)
+        mv = re.search(r'<td class="gall_count">\s*([\d,]+)\s*</td>', row)
         if mv:
             views = int(mv.group(1).replace(",", ""))
         posts.append(
@@ -309,8 +308,8 @@ COMMUNITIES = [
         "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
     },
     {
-        "name": "오늘의유머", "board": "베스트", "encoding": "utf-8", "parse": parse_todayhumor,
-        "page_url": lambda n: f"https://www.todayhumor.co.kr/board/list.php?table=humorbest&page={n}",
+        "name": "오늘의유머", "board": "자유", "encoding": "utf-8", "parse": parse_todayhumor,
+        "page_url": lambda n: f"https://www.todayhumor.co.kr/board/list.php?table=freeboard&page={n}",
     },
     {
         "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
@@ -329,10 +328,9 @@ COMMUNITIES = [
         "name": "루리웹", "board": "유머 게시판", "encoding": "utf-8", "parse": parse_ruliweb,
         "page_url": lambda n: f"https://bbs.ruliweb.com/community/board/300143?page={n}",
     },
-    {
-        "name": "인스티즈", "board": "이슈판", "encoding": "utf-8", "parse": parse_instiz,
-        "page_url": lambda n: f"https://www.instiz.net/pt?page={n}",
-    },
+    # 인스티즈는 뺐습니다 - 이 사이트는 서버/클라우드 IP 대역을 광범위하게 차단해서
+    # (이 저장소를 실행하는 샌드박스에서 직접 테스트해도 403 Forbidden), GitHub
+    # Actions에서도 마찬가지로 막힐 수밖에 없습니다.
     {
         "name": "디시인사이드", "board": "실시간베스트", "encoding": "utf-8", "parse": parse_dcbest,
         "page_url": lambda n: f"https://gall.dcinside.com/board/lists/?id=dcbest&page={n}",
