@@ -175,9 +175,126 @@ def parse_todayhumor(h):
     return posts
 
 
+def parse_natepann(h):
+    posts = []
+    parts = h.split('<h2><a href="')
+    for p in parts[1:]:
+        m = re.match(r'^([^"]+)"[^>]*title="([^"]*)"[^>]*>([^<]*)</a></h2>', p)
+        if not m:
+            continue
+        views = 0
+        mv = re.search(r'class="count">조회\s*([\d,]+)</span>', p)
+        if mv:
+            views = int(mv.group(1).replace(",", ""))
+        posts.append(
+            {
+                "title": decode_entities(m.group(3).strip()),
+                "url": "https://pann.nate.com" + decode_entities(m.group(1)),
+                "comments": 0,
+                "views": views,
+            }
+        )
+    return posts
+
+
+def parse_bobaedream(h):
+    posts = []
+    parts = h.split('<a class="bsubject"')
+    for p in parts[1:]:
+        m = re.match(r'^[^>]*href="([^"]+)"[^>]*title="([^"]*)"[^>]*>([^<]*)</a>', p)
+        if not m:
+            continue
+        views = 0
+        mv = re.search(r'<td class="count"[^>]*>\s*([\d,]+)\s*</td>', p)
+        if mv:
+            views = int(mv.group(1).replace(",", ""))
+        posts.append(
+            {
+                "title": decode_entities((m.group(2) or m.group(3)).strip()),
+                "url": "https://www.bobaedream.co.kr" + decode_entities(m.group(1)),
+                "comments": 0,
+                "views": views,
+            }
+        )
+    return posts
+
+
+def parse_ruliweb(h):
+    posts = []
+    parts = h.split('<td class="subject">')
+    for p in parts[1:]:
+        m = re.search(r'<a class="subject_link deco" href="([^"]+)"[^>]*>([\s\S]*?)</a>', p)
+        if not m:
+            continue
+        if "/community/board/300143/" not in m.group(1):
+            continue
+        views = 0
+        mv = re.search(r'<td class="hit">\s*([\d,]+)\s*</td>', p)
+        if mv:
+            views = int(mv.group(1).replace(",", ""))
+        posts.append(
+            {
+                "title": strip_tags(m.group(2)),
+                "url": decode_entities(m.group(1)),
+                "comments": 0,
+                "views": views,
+            }
+        )
+    return posts
+
+
+def parse_instiz(h):
+    posts = []
+    parts = h.split('listsubject"><a href="')
+    for p in parts[1:]:
+        m = re.match(r'^([^"]+)"[^>]*>([\s\S]*?)</a></td>', p)
+        if not m:
+            continue
+        views = 0
+        mv = re.search(r'<td class="listno" width="45">\s*([\d,]+)\s*</td>', p)
+        if mv:
+            views = int(mv.group(1).replace(",", ""))
+        # the visible comment-count number sits inside a nested <span class="cmt3">
+        # within the same title anchor - strip that whole span (not just its tags)
+        # before stripping the rest, or its digits leak onto the end of the title.
+        title_html = re.sub(r'<span class="cmt3"[^>]*>.*?</span>', "", m.group(2))
+        posts.append(
+            {
+                "title": strip_tags(title_html),
+                "url": decode_entities(m.group(1)),
+                "comments": 0,
+                "views": views,
+            }
+        )
+    return posts
+
+
+def parse_dcbest(h):
+    posts = []
+    parts = h.split('<td class="gall_tit ub-word">')
+    for p in parts[1:]:
+        m = re.match(r'^\s*<a href="([^"]+)"[^>]*>([\s\S]*?)</a>', p)
+        if not m:
+            continue
+        views = 0
+        mv = re.search(r'<td class="gall_count">\s*([\d,]+)\s*</td>', p)
+        if mv:
+            views = int(mv.group(1).replace(",", ""))
+        posts.append(
+            {
+                "title": strip_tags(m.group(2)),
+                "url": "https://gall.dcinside.com" + decode_entities(m.group(1)),
+                "comments": 0,
+                "views": views,
+            }
+        )
+    return posts
+
+
 # page_url(n) builds the URL for the n-th page (n = 1, 2, 3, ...) of each board's
 # recent-posts list. None of these sites support "sort by views" natively, so this is
-# how we widen the candidate pool instead (see PAGES_PER_BOARD above).
+# how we widen the candidate pool instead (see PAGES_PER_BOARD above). (네이트판은
+# 예외로, 사이트 자체가 이미 실시간 조회수 랭킹을 제공해서 1페이지만 사용합니다.)
 COMMUNITIES = [
     {
         "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
@@ -198,6 +315,27 @@ COMMUNITIES = [
     {
         "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
         "page_url": lambda n: f"https://www.82cook.com/entiz/enti.php?bn=15&page={n}",
+    },
+    {
+        "name": "네이트판", "board": "톡커들의 선택", "encoding": "utf-8", "parse": parse_natepann,
+        "page_url": lambda n: "https://pann.nate.com/talk/ranking",
+        "pages": 1,  # 사이트가 이미 실시간 조회수 랭킹을 제공해서 페이지네이션 불필요
+    },
+    {
+        "name": "보배드림", "board": "자유게시판", "encoding": "utf-8", "parse": parse_bobaedream,
+        "page_url": lambda n: f"https://www.bobaedream.co.kr/board/bulletin/list.php?code=freeb&page={n}",
+    },
+    {
+        "name": "루리웹", "board": "유머 게시판", "encoding": "utf-8", "parse": parse_ruliweb,
+        "page_url": lambda n: f"https://bbs.ruliweb.com/community/board/300143?page={n}",
+    },
+    {
+        "name": "인스티즈", "board": "이슈판", "encoding": "utf-8", "parse": parse_instiz,
+        "page_url": lambda n: f"https://www.instiz.net/pt?page={n}",
+    },
+    {
+        "name": "디시인사이드", "board": "실시간베스트", "encoding": "utf-8", "parse": parse_dcbest,
+        "page_url": lambda n: f"https://gall.dcinside.com/board/lists/?id=dcbest&page={n}",
     },
 ]
 
@@ -225,6 +363,9 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; }
   .card-header .title { font-weight: 700; font-size: 18px; }
   .card-header .board { margin-left: auto; font-size: 15px; color: var(--text-sub); }
+  .toggle-btn { flex: 0 0 auto; border: none; background: none; color: var(--text-sub); cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1; }
+  .toggle-btn:hover { color: var(--accent); }
+  .card.collapsed .post-list, .card.collapsed .empty-note { display: none; }
   ol.post-list { list-style: none; margin: 0; padding: 6px 0; }
   ol.post-list li { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px dashed var(--border); }
   ol.post-list li:last-child { border-bottom: none; }
@@ -262,6 +403,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   const COMMUNITY_DATA = __DATA_JSON__;
   (function () {
     const STORAGE_KEY = 'communityViewerOrder';
+    const COLLAPSE_KEY = 'communityViewerCollapsed';
     const FONT_KEY = 'communityViewerFontSize';
     const FONT_MIN = 12;
     const FONT_MAX = 26;
@@ -300,6 +442,16 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
       communities.forEach(function (c) { if (byName[c.name]) ordered.push(c); });
       return ordered;
     }
+    function getCollapsedSet() {
+      try {
+        const raw = localStorage.getItem(COLLAPSE_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch (e) { return new Set(); }
+    }
+    function saveCollapsedSet(set) { try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(Array.from(set))); } catch (e) {} }
+    const collapsedSet = getCollapsedSet();
+
     let currentOrder = applyOrder(COMMUNITY_DATA.communities, getSavedOrder());
     let dragSrcIndex = null;
     resetLink.addEventListener('click', function (e) { e.preventDefault(); localStorage.removeItem(STORAGE_KEY); currentOrder = COMMUNITY_DATA.communities.slice(); render(); });
@@ -317,9 +469,21 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
           const reordered = currentOrder.slice(); const moved = reordered.splice(dragSrcIndex, 1)[0]; reordered.splice(index, 0, moved);
           currentOrder = reordered; saveOrder(currentOrder.map(function (c) { return c.name; })); render();
         });
+        const isCollapsed = collapsedSet.has(community.name);
+        if (isCollapsed) card.classList.add('collapsed');
+
         const header = document.createElement('div'); header.className = 'card-header';
-        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span>';
+        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><button class="toggle-btn" type="button" aria-label="접기/펼치기">' + (isCollapsed ? '▸' : '▾') + '</button>';
         card.appendChild(header);
+
+        const toggleBtn = header.querySelector('.toggle-btn');
+        toggleBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const nowCollapsed = card.classList.toggle('collapsed');
+          if (nowCollapsed) { collapsedSet.add(community.name); } else { collapsedSet.delete(community.name); }
+          saveCollapsedSet(collapsedSet);
+          toggleBtn.textContent = nowCollapsed ? '▸' : '▾';
+        });
         if (!community.posts || community.posts.length === 0) {
           const empty = document.createElement('div'); empty.className = 'empty-note';
           empty.textContent = community.error ? ('불러오지 못했습니다 (' + community.error + ')') : '표시할 게시글이 없습니다.';
@@ -374,7 +538,7 @@ def main():
             seen_urls = set()
             posts = []
             page_errors = []
-            for page_num in range(1, PAGES_PER_BOARD + 1):
+            for page_num in range(1, cfg.get("pages", PAGES_PER_BOARD) + 1):
                 page_url = cfg["page_url"](page_num)
                 try:
                     html_content = fetch(page_url, cfg["encoding"])
@@ -389,7 +553,7 @@ def main():
             if not posts:
                 raise ValueError(
                     "no posts parsed from any of "
-                    + f"{PAGES_PER_BOARD} pages - site markup may have changed"
+                    + f"{cfg.get('pages', PAGES_PER_BOARD)} pages - site markup may have changed"
                     + (f" ({'; '.join(page_errors)})" if page_errors else "")
                 )
             posts.sort(key=lambda x: x["views"], reverse=True)
