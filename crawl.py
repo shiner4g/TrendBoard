@@ -308,8 +308,8 @@ COMMUNITIES = [
         "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
     },
     {
-        "name": "오늘의유머", "board": "자유", "encoding": "utf-8", "parse": parse_todayhumor,
-        "page_url": lambda n: f"https://www.todayhumor.co.kr/board/list.php?table=freeboard&page={n}",
+        "name": "오늘의유머", "board": "베스트오브베스트", "encoding": "utf-8", "parse": parse_todayhumor,
+        "page_url": lambda n: f"https://www.todayhumor.co.kr/board/list.php?table=bestofbest&page={n}",
     },
     {
         "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
@@ -490,7 +490,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
           const list = document.createElement('ol'); list.className = 'post-list';
           community.posts.forEach(function (post, idx) {
             const li = document.createElement('li');
-            li.innerHTML = '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="views">' + post.views + '</span>';
+            li.innerHTML = '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="views">' + (post.views != null ? post.views : 0) + '</span>';
             list.appendChild(li);
           });
           card.appendChild(list);
