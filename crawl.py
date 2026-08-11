@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 # TrendBoard crawler + page builder — run by .github/workflows/update.yml
-# Crawls 5 Korean community boards, keeps the top-10-by-comment-count posts from each
+# Crawls 5 Korean community boards, keeps the top-10-by-view-count posts from each
 # (falling back to the previous index.html's data for any board that fails this run),
 # and writes the result into index.html for GitHub Pages to serve.
+#
+# Candidate pool per board = latest PAGES_PER_BOARD pages of the "recent posts" list
+# (not just page 1), so posts that are a bit older but still highly viewed aren't
+# missed just because they scrolled off the very first page. None of these 5 sites
+# offer a native "sort by view count" option (Clien, for example, only offers
+# 등록일순/댓글등록순/공감순/댓글순), so we still have to pull the recency-ordered
+# list and re-rank it ourselves — pulling more pages just widens that window.
 
 import urllib.request
 import re
@@ -12,6 +19,7 @@ import datetime
 import os
 
 TOP_N = 10
+PAGES_PER_BOARD = 3
 OUT_PATH = "index.html"
 
 
@@ -167,12 +175,30 @@ def parse_todayhumor(h):
     return posts
 
 
+# page_url(n) builds the URL for the n-th page (n = 1, 2, 3, ...) of each board's
+# recent-posts list. None of these sites support "sort by views" natively, so this is
+# how we widen the candidate pool instead (see PAGES_PER_BOARD above).
 COMMUNITIES = [
-    {"name": "클리앙", "board": "모두의공원", "url": "https://www.clien.net/service/board/park", "encoding": "utf-8", "parse": parse_clien},
-    {"name": "MLB파크", "board": "BULLPEN", "url": "https://mlbpark.donga.com/mp/b.php?m=list&b=bullpen", "encoding": "utf-8", "parse": parse_mlbpark},
-    {"name": "뽐뿌", "board": "자유게시판", "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard", "encoding": "euc-kr", "parse": parse_ppomppu},
-    {"name": "오늘의유머", "board": "베스트", "url": "https://www.todayhumor.co.kr/board/list.php?table=humorbest", "encoding": "utf-8", "parse": parse_todayhumor},
-    {"name": "82cook", "board": "자유게시판", "url": "https://www.82cook.com/entiz/enti.php?bn=15", "encoding": "utf-8", "parse": parse_82cook},
+    {
+        "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
+        "page_url": lambda n: f"https://www.clien.net/service/board/park?&od=T31&category=0&po={n - 1}",
+    },
+    {
+        "name": "MLB파크", "board": "BULLPEN", "encoding": "utf-8", "parse": parse_mlbpark,
+        "page_url": lambda n: f"https://mlbpark.donga.com/mp/b.php?m=list&b=bullpen&page={n}",
+    },
+    {
+        "name": "뽐뿌", "board": "자유게시판", "encoding": "euc-kr", "parse": parse_ppomppu,
+        "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
+    },
+    {
+        "name": "오늘의유머", "board": "베스트", "encoding": "utf-8", "parse": parse_todayhumor,
+        "page_url": lambda n: f"https://www.todayhumor.co.kr/board/list.php?table=humorbest&page={n}",
+    },
+    {
+        "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
+        "page_url": lambda n: f"https://www.82cook.com/entiz/enti.php?bn=15&page={n}",
+    },
 ]
 
 PAGE_TEMPLATE = """<!DOCTYPE html>
@@ -345,13 +371,32 @@ def main():
 
     for cfg in COMMUNITIES:
         try:
-            html_content = fetch(cfg["url"], cfg["encoding"])
-            posts = cfg["parse"](html_content)
+            seen_urls = set()
+            posts = []
+            page_errors = []
+            for page_num in range(1, PAGES_PER_BOARD + 1):
+                page_url = cfg["page_url"](page_num)
+                try:
+                    html_content = fetch(page_url, cfg["encoding"])
+                    page_posts = cfg["parse"](html_content)
+                except Exception as page_e:
+                    page_errors.append(f"page {page_num}: {page_e}")
+                    continue
+                for post in page_posts:
+                    if post["url"] not in seen_urls:
+                        seen_urls.add(post["url"])
+                        posts.append(post)
+            if not posts:
+                raise ValueError(
+                    "no posts parsed from any of "
+                    + f"{PAGES_PER_BOARD} pages - site markup may have changed"
+                    + (f" ({'; '.join(page_errors)})" if page_errors else "")
+                )
             posts.sort(key=lambda x: x["views"], reverse=True)
             top = posts[:TOP_N]
-            if not top:
-                raise ValueError("no posts parsed - site markup may have changed")
             result["communities"].append({"name": cfg["name"], "board": cfg["board"], "posts": top, "error": None})
+            if page_errors:
+                print(f"[warn] {cfg['name']} had partial page failures: {'; '.join(page_errors)}")
         except Exception as e:
             cached = prev_by_name.get(cfg["name"])
             if cached and cached.get("posts"):
