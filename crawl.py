@@ -53,11 +53,16 @@ def parse_clien(h):
         m_title = re.search(r'title="([^"]+)"', p)
         if not m_title:
             continue
+        views = 0
+        mv = re.search(r'class="hit">(\d+)</span>', p)
+        if mv:
+            views = int(mv.group(1))
         posts.append(
             {
                 "title": decode_entities(m_title.group(1)),
                 "url": "https://www.clien.net" + decode_entities(m_href.group(1)),
                 "comments": int(m_count.group(1)),
+                "views": views,
             }
         )
     return posts
@@ -74,11 +79,16 @@ def parse_mlbpark(h):
         mc = re.search(r"class='replycnt'><span class='replycnt'>\[(\d+)\]", p)
         if mc:
             comments = int(mc.group(1))
+        views = 0
+        mv = re.search(r"class='viewV'>(\d+)</span>", p)
+        if mv:
+            views = int(mv.group(1))
         posts.append(
             {
                 "title": decode_entities(m.group(2)).strip(),
                 "url": decode_entities(m.group(1)),
                 "comments": comments,
+                "views": views,
             }
         )
     return posts
@@ -91,11 +101,16 @@ def parse_82cook(h):
         m = re.match(r'^<a\s+href="([^"]+)"[^>]*>([\s\S]*?)</a>\s*(?:<em>(\d+)</em>)?', p)
         if not m:
             continue
+        views = 0
+        mv = re.search(r'<td class="numbers">(\d+)</td>\s*</tr>', p)
+        if mv:
+            views = int(mv.group(1))
         posts.append(
             {
                 "title": strip_tags(m.group(2)),
                 "url": "https://www.82cook.com/entiz/" + decode_entities(m.group(1)),
                 "comments": int(m.group(3)) if m.group(3) else 0,
+                "views": views,
             }
         )
     return posts
@@ -112,11 +127,16 @@ def parse_ppomppu(h):
         mc = re.search(r'baseList-c"[^>]*>(\d+)<', p)
         if mc:
             comments = int(mc.group(1))
+        views = 0
+        mv = re.search(r'baseList-views"[^>]*>(\d+)</td>', p)
+        if mv:
+            views = int(mv.group(1))
         posts.append(
             {
                 "title": strip_tags(m.group(2)),
                 "url": "https://www.ppomppu.co.kr/zboard/" + decode_entities(m.group(1)),
                 "comments": comments,
+                "views": views,
             }
         )
     return posts
@@ -132,11 +152,16 @@ def parse_todayhumor(h):
         )
         if not m:
             continue
+        views = 0
+        mv = re.search(r'class="hits">(\d+)</td>', p)
+        if mv:
+            views = int(mv.group(1))
         posts.append(
             {
                 "title": decode_entities(m.group(2).strip()),
                 "url": "https://www.todayhumor.co.kr" + decode_entities(m.group(1)),
                 "comments": int(m.group(3)) if m.group(3) else 0,
+                "views": views,
             }
         )
     return posts
@@ -180,7 +205,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .post-title { flex: 1 1 auto; font-size: var(--post-size); color: var(--text); text-decoration: none; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .post-title:hover { color: var(--accent); text-decoration: underline; }
   .post-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-  .comments { flex: 0 0 auto; font-size: calc(var(--post-size) - 2px); color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+  .views { flex: 0 0 auto; font-size: calc(var(--post-size) - 2px); color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
   .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 16px; text-align: center; }
   footer { max-width: 1620px; margin: 36px auto 0; text-align: center; }
   .controls { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -277,7 +302,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
           const list = document.createElement('ol'); list.className = 'post-list';
           community.posts.forEach(function (post, idx) {
             const li = document.createElement('li');
-            li.innerHTML = '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="comments">' + post.comments + '</span>';
+            li.innerHTML = '<a class="post-title" href="' + escapeAttr(post.url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeAttr(post.title) + '">' + escapeHtml(post.title) + '</a><span class="views">' + post.views + '</span>';
             list.appendChild(li);
           });
           card.appendChild(list);
@@ -322,7 +347,7 @@ def main():
         try:
             html_content = fetch(cfg["url"], cfg["encoding"])
             posts = cfg["parse"](html_content)
-            posts.sort(key=lambda x: x["comments"], reverse=True)
+            posts.sort(key=lambda x: x["views"], reverse=True)
             top = posts[:TOP_N]
             if not top:
                 raise ValueError("no posts parsed - site markup may have changed")
