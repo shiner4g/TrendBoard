@@ -356,9 +356,9 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
   .card.drag-over { border-color: var(--accent); }
-  .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); cursor: grab; }
-  .card-header:active { cursor: grabbing; }
-  .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; }
+  .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); }
+  .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; cursor: grab; touch-action: none; }
+  .drag-handle:active { cursor: grabbing; }
   .card-header .title { font-weight: 700; font-size: 18px; }
   .card-header .board { margin-left: auto; font-size: 15px; color: var(--text-sub); }
   .toggle-btn { flex: 0 0 auto; border: none; background: none; color: var(--text-sub); cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1; }
@@ -451,28 +451,69 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     const collapsedSet = getCollapsedSet();
 
     let currentOrder = applyOrder(COMMUNITY_DATA.communities, getSavedOrder());
-    let dragSrcIndex = null;
     resetLink.addEventListener('click', function (e) { e.preventDefault(); localStorage.removeItem(STORAGE_KEY); currentOrder = COMMUNITY_DATA.communities.slice(); render(); });
+
+    // ---------- drag-to-reorder (Pointer Events, not native HTML5 DnD) ----------
+    // Native HTML5 drag-and-drop (draggable="true" + dragstart/dragover/drop) has
+    // spotty touch support - it works in some mobile browsers (e.g. Chrome for
+    // Android) but not others (e.g. Samsung Internet, which doesn't translate touch
+    // gestures into HTML5 drag events at all). Pointer Events unify mouse/touch/pen
+    // input and work consistently across both, so we drive the whole interaction
+    // through pointerdown/pointermove/pointerup on the drag-handle instead.
+    let dragSrcIndex = null;
+    let dragActive = false;
+
+    function attachDragHandle(handle, card, index) {
+      handle.style.touchAction = 'none';
+      handle.addEventListener('pointerdown', function (e) {
+        dragSrcIndex = index;
+        dragActive = true;
+        card.classList.add('dragging');
+        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      handle.addEventListener('pointermove', function (e) {
+        if (!dragActive) return;
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const targetCard = el && el.closest ? el.closest('.card') : null;
+        Array.from(grid.querySelectorAll('.card.drag-over')).forEach(function (c) { c.classList.remove('drag-over'); });
+        if (targetCard && targetCard !== card) targetCard.classList.add('drag-over');
+      });
+      function endDrag(e) {
+        if (!dragActive) return;
+        dragActive = false;
+        card.classList.remove('dragging');
+        Array.from(grid.querySelectorAll('.card.drag-over')).forEach(function (c) { c.classList.remove('drag-over'); });
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const targetCard = el && el.closest ? el.closest('.card') : null;
+        if (targetCard && targetCard !== card) {
+          const targetIndex = Array.from(grid.children).indexOf(targetCard);
+          if (dragSrcIndex !== null && targetIndex !== -1 && targetIndex !== dragSrcIndex) {
+            const reordered = currentOrder.slice();
+            const moved = reordered.splice(dragSrcIndex, 1)[0];
+            reordered.splice(targetIndex, 0, moved);
+            currentOrder = reordered;
+            saveOrder(currentOrder.map(function (c) { return c.name; }));
+            render();
+          }
+        }
+        dragSrcIndex = null;
+      }
+      handle.addEventListener('pointerup', endDrag);
+      handle.addEventListener('pointercancel', endDrag);
+    }
+
     function render() {
       grid.innerHTML = '';
       currentOrder.forEach(function (community, index) {
-        const card = document.createElement('div'); card.className = 'card'; card.draggable = true;
-        card.addEventListener('dragstart', function (e) { dragSrcIndex = index; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); });
-        card.addEventListener('dragend', function () { card.classList.remove('dragging'); });
-        card.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('drag-over'); });
-        card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
-        card.addEventListener('drop', function (e) {
-          e.preventDefault(); card.classList.remove('drag-over');
-          if (dragSrcIndex === null || dragSrcIndex === index) return;
-          const reordered = currentOrder.slice(); const moved = reordered.splice(dragSrcIndex, 1)[0]; reordered.splice(index, 0, moved);
-          currentOrder = reordered; saveOrder(currentOrder.map(function (c) { return c.name; })); render();
-        });
+        const card = document.createElement('div'); card.className = 'card';
         const isCollapsed = collapsedSet.has(community.name);
         if (isCollapsed) card.classList.add('collapsed');
 
         const header = document.createElement('div'); header.className = 'card-header';
         header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><button class="toggle-btn" type="button" aria-label="접기/펼치기">' + (isCollapsed ? '▸' : '▾') + '</button>';
         card.appendChild(header);
+
+        attachDragHandle(header.querySelector('.drag-handle'), card, index);
 
         const toggleBtn = header.querySelector('.toggle-btn');
         toggleBtn.addEventListener('click', function (e) {
