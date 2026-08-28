@@ -373,7 +373,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .views { flex: 0 0 auto; font-size: calc(var(--post-size) - 2px); color: var(--accent); background: var(--badge-bg); border-radius: 10px; padding: 1px 7px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
   .empty-note { padding: 24px 16px; color: var(--text-sub); font-size: 16px; text-align: center; }
   footer { max-width: 1620px; margin: 36px auto 0; text-align: center; }
-  .controls { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .controls { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
   .controls button { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 6px; padding: 5px 14px; font-size: 14px; cursor: pointer; }
   .controls button:hover { border-color: var(--accent); color: var(--accent); }
   .font-controls { display: inline-flex; align-items: center; gap: 6px; }
@@ -385,6 +385,10 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <header>
   <h1>TrendBoard</h1>
   <div class="updated" id="updatedAt">불러오는 중...</div>
+  <div class="controls">
+    <button id="collapseAll" type="button">모두 접기</button>
+    <button id="expandAll" type="button">모두 펼치기</button>
+  </div>
 </header>
 <div class="grid" id="grid"></div>
 <footer>
@@ -412,6 +416,8 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     const fontDecBtn = document.getElementById('fontDec');
     const fontIncBtn = document.getElementById('fontInc');
     const fontSizeLabel = document.getElementById('fontSizeLabel');
+    const collapseAllBtn = document.getElementById('collapseAll');
+    const expandAllBtn = document.getElementById('expandAll');
 
     function getFontSize() {
       const raw = parseInt(localStorage.getItem(FONT_KEY), 10);
@@ -452,6 +458,17 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 
     let currentOrder = applyOrder(COMMUNITY_DATA.communities, getSavedOrder());
     resetLink.addEventListener('click', function (e) { e.preventDefault(); localStorage.removeItem(STORAGE_KEY); currentOrder = COMMUNITY_DATA.communities.slice(); render(); });
+
+    collapseAllBtn.addEventListener('click', function () {
+      currentOrder.forEach(function (c) { collapsedSet.add(c.name); });
+      saveCollapsedSet(collapsedSet);
+      render();
+    });
+    expandAllBtn.addEventListener('click', function () {
+      collapsedSet.clear();
+      saveCollapsedSet(collapsedSet);
+      render();
+    });
 
     // ---------- drag-to-reorder (Pointer Events, not native HTML5 DnD) ----------
     // Native HTML5 drag-and-drop (draggable="true" + dragstart/dragover/drop) has
