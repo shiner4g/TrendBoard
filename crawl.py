@@ -360,13 +360,14 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
   .card.drag-over { border-color: var(--accent); }
-  .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); }
+  .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--card-bg) 92%, var(--text)); cursor: pointer; }
+  .card-header:hover { background: color-mix(in srgb, var(--card-bg) 85%, var(--text)); }
+  .card-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; cursor: grab; touch-action: none; }
   .drag-handle:active { cursor: grabbing; }
   .card-header .title { font-weight: 700; font-size: 18px; }
   .card-header .board { margin-left: auto; font-size: 15px; color: var(--text-sub); }
-  .toggle-btn { flex: 0 0 auto; border: none; background: none; color: var(--text-sub); cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1; }
-  .toggle-btn:hover { color: var(--accent); }
+  .toggle-icon { flex: 0 0 auto; color: var(--text-sub); font-size: 14px; padding: 2px 4px; line-height: 1; }
   .card.collapsed .post-list, .card.collapsed .empty-note { display: none; }
   ol.post-list { list-style: none; margin: 0; padding: 6px 0; }
   ol.post-list li { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px dashed var(--border); }
@@ -533,18 +534,29 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
         if (isCollapsed) card.classList.add('collapsed');
 
         const header = document.createElement('div'); header.className = 'card-header';
-        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><button class="toggle-btn" type="button" aria-label="접기/펼치기">' + (isCollapsed ? '▸' : '▾') + '</button>';
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('aria-expanded', String(!isCollapsed));
+        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><span class="toggle-icon" aria-hidden="true">' + (isCollapsed ? '▸' : '▾') + '</span>';
         card.appendChild(header);
 
         attachDragHandle(header.querySelector('.drag-handle'), card, index);
 
-        const toggleBtn = header.querySelector('.toggle-btn');
-        toggleBtn.addEventListener('click', function (e) {
-          e.stopPropagation();
+        const toggleIcon = header.querySelector('.toggle-icon');
+        function toggleCollapse() {
           const nowCollapsed = card.classList.toggle('collapsed');
           if (nowCollapsed) { collapsedSet.add(community.name); } else { collapsedSet.delete(community.name); }
           saveCollapsedSet(collapsedSet);
-          toggleBtn.textContent = nowCollapsed ? '▸' : '▾';
+          toggleIcon.textContent = nowCollapsed ? '▸' : '▾';
+          header.setAttribute('aria-expanded', String(!nowCollapsed));
+        }
+        header.addEventListener('click', function (e) {
+          if (e.target.closest('.drag-handle')) return;
+          toggleCollapse();
+        });
+        header.addEventListener('keydown', function (e) {
+          if (e.target.closest('.drag-handle')) return;
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapse(); }
         });
         if (!community.posts || community.posts.length === 0) {
           const empty = document.createElement('div'); empty.className = 'empty-note';
