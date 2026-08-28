@@ -349,9 +349,13 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16181d; --card-bg: #1f2228; --border: #2c2f36; --text: #e6e6e6; --text-sub: #8a8f98; --accent: #6ea8fe; --badge-bg: #1d2740; } }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 24px 16px 60px; background: var(--bg); color: var(--text); font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
-  header { max-width: 1620px; margin: 0 auto 24px; text-align: center; }
-  header h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.5px; text-wrap: balance; }
-  .updated { font-size: 15px; color: var(--text-sub); }
+  header { max-width: 1620px; margin: 0 auto 24px; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -0.5px; }
+  .header-icons { display: flex; gap: 8px; flex: 0 0 auto; }
+  .icon-btn { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 6px; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .updated { font-size: 15px; color: var(--text-sub); text-align: center; margin-top: 8px; }
   .grid { max-width: 1620px; margin: 24px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 18px; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: opacity 0.15s, border-color 0.15s; }
   .card.dragging { opacity: 0.4; }
@@ -383,12 +387,14 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 <header>
-  <h1>TrendBoard</h1>
-  <div class="updated" id="updatedAt">불러오는 중...</div>
-  <div class="controls">
-    <button id="collapseAll" type="button">모두 접기</button>
-    <button id="expandAll" type="button">모두 펼치기</button>
+  <div class="header-top">
+    <h1>TrendBoard</h1>
+    <div class="header-icons">
+      <button id="collapseAll" type="button" class="icon-btn" title="모두 접기" aria-label="모두 접기">⊟</button>
+      <button id="expandAll" type="button" class="icon-btn" title="모두 펼치기" aria-label="모두 펼치기">⊞</button>
+    </div>
   </div>
+  <div class="updated" id="updatedAt">불러오는 중...</div>
 </header>
 <div class="grid" id="grid"></div>
 <footer>
