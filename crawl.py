@@ -303,16 +303,8 @@ def parse_dcbest(h):
 # 예외로, 사이트 자체가 이미 실시간 조회수 랭킹을 제공해서 1페이지만 사용합니다.)
 COMMUNITIES = [
     {
-        "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
-        "page_url": lambda n: f"https://www.clien.net/service/board/park?&od=T31&category=0&po={n - 1}",
-    },
-    {
         "name": "MLB파크", "board": "BULLPEN", "encoding": "utf-8", "parse": parse_mlbpark,
         "page_url": lambda n: f"https://mlbpark.donga.com/mp/b.php?m=list&b=bullpen&page={n}",
-    },
-    {
-        "name": "뽐뿌", "board": "자유게시판", "encoding": "euc-kr", "parse": parse_ppomppu,
-        "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
     },
     {
         "name": "오늘의유머", "board": "베스트30", "encoding": "utf-8", "parse": parse_todayhumor,
@@ -321,8 +313,8 @@ COMMUNITIES = [
         "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 page_url 그대로 사용)
     },
     {
-        "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
-        "page_url": lambda n: f"https://www.82cook.com/entiz/enti.php?bn=15&page={n}",
+        "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
+        "page_url": lambda n: f"https://www.clien.net/service/board/park?&od=T31&category=0&po={n - 1}",
     },
     {
         "name": "네이트판", "board": "톡커들의 선택", "encoding": "utf-8", "parse": parse_natepann,
@@ -343,6 +335,14 @@ COMMUNITIES = [
     {
         "name": "디시인사이드", "board": "실시간베스트", "encoding": "utf-8", "parse": parse_dcbest,
         "page_url": lambda n: f"https://gall.dcinside.com/board/lists/?id=dcbest&page={n}",
+    },
+    {
+        "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
+        "page_url": lambda n: f"https://www.82cook.com/entiz/enti.php?bn=15&page={n}",
+    },
+    {
+        "name": "뽐뿌", "board": "자유게시판", "encoding": "euc-kr", "parse": parse_ppomppu,
+        "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
     },
 ]
 
