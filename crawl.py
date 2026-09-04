@@ -373,7 +373,9 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   .card-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .drag-handle { flex: 0 0 auto; color: var(--text-sub); font-size: 16px; letter-spacing: -1px; user-select: none; cursor: grab; touch-action: none; }
   .drag-handle:active { cursor: grabbing; }
-  .card-header .title { font-weight: 700; font-size: 18px; }
+  .card-header .title { font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; }
+  .card-header a.title:hover { color: var(--accent); text-decoration: underline; }
+  .card-header a.title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   .card-header .board { margin-left: auto; font-size: 15px; color: var(--text-sub); }
   .toggle-icon { flex: 0 0 auto; color: var(--text-sub); font-size: 14px; padding: 2px 4px; line-height: 1; }
   .card.collapsed .post-list, .card.collapsed .empty-note { display: none; }
@@ -545,7 +547,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
         header.setAttribute('role', 'button');
         header.setAttribute('tabindex', '0');
         header.setAttribute('aria-expanded', String(!isCollapsed));
-        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span><span class="title">' + escapeHtml(community.name) + '</span><span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><span class="toggle-icon" aria-hidden="true">' + (isCollapsed ? '▸' : '▾') + '</span>';
+        header.innerHTML = '<span class="drag-handle" aria-hidden="true">⠿</span>' + (community.boardUrl ? '<a class="title" href="' + escapeAttr(community.boardUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(community.name) + '</a>' : '<span class="title">' + escapeHtml(community.name) + '</span>') + '<span class="board">' + escapeHtml(community.board || '') + (community.stale ? ' · 캐시' : '') + '</span><span class="toggle-icon" aria-hidden="true">' + (isCollapsed ? '▸' : '▾') + '</span>';
         card.appendChild(header);
 
         attachDragHandle(header.querySelector('.drag-handle'), card, index);
@@ -559,11 +561,11 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
           header.setAttribute('aria-expanded', String(!nowCollapsed));
         }
         header.addEventListener('click', function (e) {
-          if (e.target.closest('.drag-handle')) return;
+          if (e.target.closest('.drag-handle') || e.target.closest('.title')) return;
           toggleCollapse();
         });
         header.addEventListener('keydown', function (e) {
-          if (e.target.closest('.drag-handle')) return;
+          if (e.target.closest('.drag-handle') || e.target.closest('.title')) return;
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapse(); }
         });
         if (!community.posts || community.posts.length === 0) {
@@ -640,17 +642,30 @@ def main():
                 )
             posts.sort(key=lambda x: x["views"], reverse=True)
             top = posts[:TOP_N]
-            result["communities"].append({"name": cfg["name"], "board": cfg["board"], "posts": top, "error": None})
+            board_url = cfg["page_url"](1)
+            result["communities"].append(
+                {"name": cfg["name"], "board": cfg["board"], "posts": top, "error": None, "boardUrl": board_url}
+            )
             if page_errors:
                 print(f"[warn] {cfg['name']} had partial page failures: {'; '.join(page_errors)}")
         except Exception as e:
+            board_url = cfg["page_url"](1)
             cached = None if cfg.get("no_cache") else prev_by_name.get(cfg["name"])
             if cached and cached.get("posts"):
                 result["communities"].append(
-                    {"name": cfg["name"], "board": cfg["board"], "posts": cached["posts"], "error": None, "stale": True}
+                    {
+                        "name": cfg["name"],
+                        "board": cfg["board"],
+                        "posts": cached["posts"],
+                        "error": None,
+                        "stale": True,
+                        "boardUrl": board_url,
+                    }
                 )
             else:
-                result["communities"].append({"name": cfg["name"], "board": cfg["board"], "posts": [], "error": str(e)})
+                result["communities"].append(
+                    {"name": cfg["name"], "board": cfg["board"], "posts": [], "error": str(e), "boardUrl": board_url}
+                )
             print(f"[warn] {cfg['name']} failed: {e}")
 
     data_json = json.dumps(result, ensure_ascii=False)
