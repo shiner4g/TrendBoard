@@ -318,6 +318,7 @@ COMMUNITIES = [
         "name": "오늘의유머", "board": "베스트30", "encoding": "utf-8", "parse": parse_todayhumor,
         "page_url": lambda n: "https://www.todayhumor.co.kr/board/list.php?kind=todaybest",
         "pages": 1,  # 오늘 하루 기준 베스트 30개만 보여주는 페이지라 페이지네이션이 없음
+        "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 page_url 그대로 사용)
     },
     {
         "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
@@ -642,14 +643,14 @@ def main():
                 )
             posts.sort(key=lambda x: x["views"], reverse=True)
             top = posts[:TOP_N]
-            board_url = cfg["page_url"](1)
+            board_url = cfg.get("link_url", cfg["page_url"](1))
             result["communities"].append(
                 {"name": cfg["name"], "board": cfg["board"], "posts": top, "error": None, "boardUrl": board_url}
             )
             if page_errors:
                 print(f"[warn] {cfg['name']} had partial page failures: {'; '.join(page_errors)}")
         except Exception as e:
-            board_url = cfg["page_url"](1)
+            board_url = cfg.get("link_url", cfg["page_url"](1))
             cached = None if cfg.get("no_cache") else prev_by_name.get(cfg["name"])
             if cached and cached.get("posts"):
                 result["communities"].append(
