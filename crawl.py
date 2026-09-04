@@ -306,11 +306,13 @@ COMMUNITIES = [
     {
         "name": "뽐뿌", "board": "자유게시판", "encoding": "euc-kr", "parse": parse_ppomppu,
         "page_url": lambda n: f"https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&page={n}",
+        "no_cache": True,  # 이 크롤이 실패해도 이전 회차 캐시로 대체하지 않음
     },
     {
         "name": "오늘의유머", "board": "베스트30", "encoding": "utf-8", "parse": parse_todayhumor,
         "page_url": lambda n: "https://www.todayhumor.co.kr/board/list.php?kind=todaybest",
         "pages": 1,  # 오늘 하루 기준 베스트 30개만 보여주는 페이지라 페이지네이션이 없음
+        "no_cache": True,  # 이 크롤이 실패해도 이전 회차 캐시로 대체하지 않음
     },
     {
         "name": "82cook", "board": "자유게시판", "encoding": "utf-8", "parse": parse_82cook,
@@ -637,7 +639,7 @@ def main():
             if page_errors:
                 print(f"[warn] {cfg['name']} had partial page failures: {'; '.join(page_errors)}")
         except Exception as e:
-            cached = prev_by_name.get(cfg["name"])
+            cached = None if cfg.get("no_cache") else prev_by_name.get(cfg["name"])
             if cached and cached.get("posts"):
                 result["communities"].append(
                     {"name": cfg["name"], "board": cfg["board"], "posts": cached["posts"], "error": None, "stale": True}
