@@ -12,6 +12,7 @@
 # list and re-rank it ourselves — pulling more pages just widens that window.
 
 import urllib.request
+import urllib.parse
 import re
 import html
 import json
@@ -24,13 +25,19 @@ OUT_PATH = "index.html"
 
 
 def fetch(url, encoding):
+    parsed = urllib.parse.urlsplit(url)
+    referer = f"{parsed.scheme}://{parsed.netloc}/"
     req = urllib.request.Request(
         url,
         headers={
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                 "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-            )
+            ),
+            # 일부 사이트(뽐뿌 등)가 Referer 없는 요청을 차단하기 시작해서, 같은
+            # 사이트 내에서 이동한 것처럼 자기 자신의 origin을 Referer로 보냄
+            "Referer": referer,
+            "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         },
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
