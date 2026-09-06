@@ -182,33 +182,6 @@ def parse_todayhumor(h):
     return posts
 
 
-def parse_todayhumor_mobile(h):
-    # www.todayhumor.co.kr가 GitHub Actions IP 대역을 (Cloudflare 등으로) 차단하는 것 같아서
-    # 다른 WAF 설정을 쓰는 모바일 서브도메인(m.todayhumor.co.kr)으로 시도해보는 실험용 파서.
-    # 페이지 구조가 데스크톱판과 완전히 달라서 별도 파서가 필요함.
-    posts = []
-    parts = h.split('<a href="view.php?')
-    for p in parts[1:]:
-        href_m = re.match(r'^([^"]+)"', p)
-        if not href_m:
-            continue
-        block = p[:800]
-        title_m = re.search(r'<h2 class="listSubject">([^<]*)', block)
-        if not title_m:
-            continue
-        views_m = re.search(r'class="list_viewCount">(\d+)</span>', block)
-        comment_m = re.search(r'class="memo_count">\[(\d+)\]', block)
-        posts.append(
-            {
-                "title": decode_entities(title_m.group(1).strip()),
-                "url": "https://m.todayhumor.co.kr/view.php?" + decode_entities(href_m.group(1)),
-                "comments": int(comment_m.group(1)) if comment_m else 0,
-                "views": int(views_m.group(1)) if views_m else 0,
-            }
-        )
-    return posts
-
-
 def parse_natepann(h):
     posts = []
     parts = h.split('<h2><a href="')
@@ -334,12 +307,14 @@ COMMUNITIES = [
         "page_url": lambda n: f"https://mlbpark.donga.com/mp/b.php?m=list&b=bullpen&page={n}",
     },
     {
-        "name": "오늘의유머", "board": "베스트30", "encoding": "utf-8", "parse": parse_todayhumor_mobile,
-        # www 데스크톱판이 GitHub Actions IP를 막는 것 같아서 모바일 서브도메인으로 시도 (실험적).
-        # 이것도 막히면 prev_by_name 캐시로 대체됨 - 다음 실행 로그로 성공 여부 확인 필요.
-        "page_url": lambda n: "https://m.todayhumor.co.kr/list.php?table=todaybest",
+        "name": "오늘의유머", "board": "베스트30", "encoding": "utf-8", "parse": parse_todayhumor,
+        # todayhumor.co.kr가 GitHub Actions의 IP 대역 자체를 차단하고 있음 (Referer 헤더,
+        # 모바일 서브도메인 등 다 시도해봤지만 소용없었음 - 샌드박스 IP에서는 둘 다 정상 작동해서
+        # 마크업/헤더 문제가 아니라 순수 IP 차단으로 확인됨). 코드로 해결 불가능한 부분이라 그냥
+        # 두기로 함 - 실패 시 prev_by_name 캐시로 대체되고 "· 캐시"로 표시됨.
+        "page_url": lambda n: "https://www.todayhumor.co.kr/board/list.php?kind=todaybest",
         "pages": 1,  # 오늘 하루 기준 베스트 30개만 보여주는 페이지라 페이지네이션이 없음
-        "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",
+        "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 page_url 그대로 사용)
     },
     {
         "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
