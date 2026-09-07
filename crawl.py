@@ -297,6 +297,33 @@ def parse_dcbest(h):
     return posts
 
 
+def parse_etoland(h):
+    # etoland.co.kr는 Next.js로 새로 만들어진 사이트라 다른 곳처럼 서버가 완성된 HTML을
+    # 내려주지 않고, 페이지가 뜬 뒤 JS가 별도 JSON API를 호출해서 목록을 채움. 그래서
+    # 정규식으로 HTML을 긁는 대신, 브라우저 네트워크 탭으로 찾아낸 그 JSON API
+    # (/v1/board/article/scrap/best)를 직접 호출해서 파싱함 - 오히려 훨씬 깔끔함.
+    try:
+        data = json.loads(h)
+    except Exception:
+        return []
+    posts = []
+    for item in data.get("data", {}).get("articles", []):
+        a = item.get("article", {})
+        slug = a.get("slug")
+        bo_table = a.get("boTable")
+        if not slug or not bo_table:
+            continue
+        posts.append(
+            {
+                "title": decode_entities(str(a.get("subject", "")).strip()),
+                "url": f"https://etoland.co.kr/b/{bo_table}/view/{urllib.parse.quote(slug)}",
+                "comments": a.get("commentCount") or 0,
+                "views": a.get("viewCount") or 0,
+            }
+        )
+    return posts
+
+
 # page_url(n) builds the URL for the n-th page (n = 1, 2, 3, ...) of each board's
 # recent-posts list. None of these sites support "sort by views" natively, so this is
 # how we widen the candidate pool instead (see PAGES_PER_BOARD above). (네이트판은
@@ -315,6 +342,12 @@ COMMUNITIES = [
         "page_url": lambda n: "https://www.todayhumor.co.kr/board/list.php?kind=todaybest",
         "pages": 1,  # 오늘 하루 기준 베스트 30개만 보여주는 페이지라 페이지네이션이 없음
         "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 page_url 그대로 사용)
+    },
+    {
+        "name": "이토랜드", "board": "주간 인기글", "encoding": "utf-8", "parse": parse_etoland,
+        "page_url": lambda n: "https://etoland.co.kr/v1/board/article/scrap/best?period=week&page=1&page_size=50",
+        "pages": 1,  # 이미 스크랩 기준 주간 인기글 랭킹을 주는 JSON API라 페이지네이션 불필요
+        "link_url": "https://etoland.co.kr/hit/list",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 API 그대로 사용)
     },
     {
         "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
