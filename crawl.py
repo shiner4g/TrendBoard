@@ -24,22 +24,23 @@ PAGES_PER_BOARD = 3
 OUT_PATH = "index.html"
 
 
-def fetch(url, encoding):
+def fetch(url, encoding, method="GET", data=None, extra_headers=None):
     parsed = urllib.parse.urlsplit(url)
     referer = f"{parsed.scheme}://{parsed.netloc}/"
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-            ),
-            # 일부 사이트(뽐뿌 등)가 Referer 없는 요청을 차단하기 시작해서, 같은
-            # 사이트 내에서 이동한 것처럼 자기 자신의 origin을 Referer로 보냄
-            "Referer": referer,
-            "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-        },
-    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        ),
+        # 일부 사이트(뽐뿌 등)가 Referer 없는 요청을 차단하기 시작해서, 같은
+        # 사이트 내에서 이동한 것처럼 자기 자신의 origin을 Referer로 보냄
+        "Referer": referer,
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    }
+    if extra_headers:
+        headers.update(extra_headers)
+    body = data.encode("utf-8") if isinstance(data, str) else data
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=20) as resp:
         raw = resp.read()
     return raw.decode(encoding, errors="replace")
@@ -297,18 +298,28 @@ def parse_dcbest(h):
     return posts
 
 
-def parse_etoland(h):
-    # etoland.co.kr는 Next.js로 새로 만들어진 사이트라 다른 곳처럼 서버가 완성된 HTML을
-    # 내려주지 않고, 페이지가 뜬 뒤 JS가 별도 JSON API를 호출해서 목록을 채움. 그래서
-    # 정규식으로 HTML을 긁는 대신, 브라우저 네트워크 탭으로 찾아낸 그 JSON API
-    # (/v1/board/article/scrap/best)를 직접 호출해서 파싱함 - 오히려 훨씬 깔끔함.
+def parse_etoland_hit(h):
+    # etoland.co.kr는 Next.js 앱이라 서버가 완성된 HTML을 안 주고, 페이지 JS가 떠서
+    # 별도로 데이터를 불러옴. 처음엔 공개 REST API(/v1/board/article/scrap/best,
+    # period=week)를 썼는데, 기간이 일주일 고정이라 조회수 9만/6만짜리 글이 계속
+    # 안 바뀌는 문제가 있었음(2026-09-09 사용자 피드백). "오늘의 HIT" 위젯이 쓰는,
+    # 하루(days=1) 기준으로 인기글을 주는 내부 Server Action으로 교체함 - 이게
+    # 실제로 더 자주 바뀜. 단, 이건 URL이 아니라 브라우저가 페이지 안에서만 호출하는
+    # 방식이라 next-action 헤더값(ETOLAND_HIT_ACTION)이 필요하고, 이 값은 사이트가
+    # 재배포되면 바뀌어서 크롤링이 조용히 실패할 수 있음(그러면 다른 게시판처럼
+    # prev_by_name 캐시로 대체됨 - 전체가 죽지는 않음). 응답이 Next.js RSC 스트리밍
+    # 포맷이라 "1:[...]" 형태의 청크 하나로 실제 글 배열이 옴 - 정규식으로 그 시작
+    # 지점만 찾고 json.JSONDecoder().raw_decode로 거기부터 파싱해서 뒤에 붙는
+    # 다른 청크는 자동으로 무시함.
+    m = re.search(r"1:(\[\{.*)", h, re.S)
+    if not m:
+        return []
     try:
-        data = json.loads(h)
+        articles, _ = json.JSONDecoder().raw_decode(m.group(1))
     except Exception:
         return []
     posts = []
-    for item in data.get("data", {}).get("articles", []):
-        a = item.get("article", {})
+    for a in articles:
         slug = a.get("slug")
         bo_table = a.get("boTable")
         if not slug or not bo_table:
@@ -323,6 +334,13 @@ def parse_etoland(h):
         )
     return posts
 
+
+# etoland.co.kr의 "오늘의 HIT" 위젯이 쓰는 내부 Server Action 식별자 - 사이트가
+# 재배포되면 바뀔 수 있음 (parse_etoland_hit의 주석 참고). 여러 게시판(생활관/유머/
+# 익명/시사)에 대해 이 값으로 각각 호출한 뒤 합쳐서 우리가 직접 조회수로 재정렬함 -
+# 사이트 자체의 "종합" 탭을 그대로 재현하려 했으나 실패해서 우리 쪽에서 대신 합침.
+ETOLAND_HIT_ACTION = "603390f7935658d7a8f30385541a9cbe8dd6b1cb6e"
+ETOLAND_HIT_BOARDS = ["freebbs", "etohumor07", "anony1", "sisabbs01"]
 
 # page_url(n) builds the URL for the n-th page (n = 1, 2, 3, ...) of each board's
 # recent-posts list. None of these sites support "sort by views" natively, so this is
@@ -344,10 +362,31 @@ COMMUNITIES = [
         "link_url": "https://m.todayhumor.co.kr/list.php?table=todaybest",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 page_url 그대로 사용)
     },
     {
-        "name": "이토랜드", "board": "주간 인기글", "encoding": "utf-8", "parse": parse_etoland,
-        "page_url": lambda n: "https://etoland.co.kr/v1/board/article/scrap/best?period=week&page=1&page_size=50",
-        "pages": 1,  # 이미 스크랩 기준 주간 인기글 랭킹을 주는 JSON API라 페이지네이션 불필요
-        "link_url": "https://etoland.co.kr/hit/list",  # 카드 제목 클릭 시 이동할 주소 (크롤링은 위 API 그대로 사용)
+        "name": "이토랜드", "board": "오늘의 HIT", "encoding": "utf-8", "parse": parse_etoland_hit,
+        "page_url": lambda n: "https://etoland.co.kr/hit/list",
+        # "페이지"마다 실제로는 다른 게시판(생활관/유머/익명/시사)을 하루(days=1)
+        # 기준 인기순으로 요청 - page_url은 고정이고 page_body만 게시판별로 바뀜.
+        "page_body": lambda n: json.dumps(
+            [
+                {
+                    "bo_table_list": ETOLAND_HIT_BOARDS[n - 1],
+                    "days": 1,
+                    "desc": "popularity",
+                    "is_except_anonymous": False,
+                    "page": 1,
+                    "page_size": 20,
+                },
+                [],
+            ]
+        ),
+        "pages": len(ETOLAND_HIT_BOARDS),
+        "fetch_method": "POST",
+        "fetch_headers": {
+            "Accept": "text/x-component",
+            "Content-Type": "text/plain;charset=UTF-8",
+            "next-action": ETOLAND_HIT_ACTION,
+        },
+        "link_url": "https://etoland.co.kr/hit/list",  # 카드 제목 클릭 시 이동할 주소
     },
     {
         "name": "클리앙", "board": "모두의공원", "encoding": "utf-8", "parse": parse_clien,
@@ -662,8 +701,15 @@ def main():
             page_errors = []
             for page_num in range(1, cfg.get("pages", PAGES_PER_BOARD) + 1):
                 page_url = cfg["page_url"](page_num)
+                page_body = cfg.get("page_body", lambda n: None)(page_num)
                 try:
-                    html_content = fetch(page_url, cfg["encoding"])
+                    html_content = fetch(
+                        page_url,
+                        cfg["encoding"],
+                        method=cfg.get("fetch_method", "GET"),
+                        data=page_body,
+                        extra_headers=cfg.get("fetch_headers"),
+                    )
                     page_posts = cfg["parse"](html_content)
                 except Exception as page_e:
                     page_errors.append(f"page {page_num}: {page_e}")
